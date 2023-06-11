@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CRUD Web Service</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.11.2/datatables.min.css"/>
+    <link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"/>
+    <style>
+        #updateDialog {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>CRUD Web Service</h1>
+
+    <h2>Product Data Management</h2>
+    <table id="produkTable" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>ID Produk</th>
+                <th>Nama Produk</th>
+                <th>Harga</th>
+                <th>Deskripsi</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <h2>Add Produk</h2>
+    <form id="addForm">
+        <div>
+            <label for="id">ID Produk:</label>
+            <input type="text" id="id_produk" name="id_produk">
+        </div>
+        <div>
+            <label for="nama_villa">Nama Produk:</label>
+            <input type="text" id="nama_produk" name="nama_produk">
+        </div>
+        <div>
+            <label for="harga">Harga:</label>
+            <input type="text" id="harga_produk" name="harga_produk">
+        </div>
+        <div>
+            <label for="deskripsi">Deskripsi:</label>
+            <input type="text" id="deskripsi" name="deskripsi">
+        </div>
+        <div>
+            <button type="submit">Add</button>
+        </div>
+    </form>
+
+    <!-- Update Dialog -->
+    <div id="updateDialog" title="Update Produk">
+        <form id="updateForm">
+            <div>
+                <label for="id_produk_update">ID Produk:</label>
+                <input type="text" id="id_produk_update" name="id_produk_update" readonly>
+            </div>
+            <div>
+                <label for="new_id_produk">New ID Produk:</label>
+                <input type="text" id="new_id_produk" name="new_id_produk">
+            </div>
+            <div>
+                <label for="nama_produk_update">Nama Produk:</label>
+                <input type="text" id="nama_produk_update" name="nama_produk_update">
+            </div>
+            <div>
+                <label for="harga_produk_update">Harga:</label>
+                <input type="text" id="harga_produk_update" name="harga_produk_update">
+            </div>
+            <div>
+                <label for="deskripsi_update">Deskripsi:</label>
+                <input type="text" id="deskripsi_update" name="deskripsi_update">
+            </div>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="https://cdn.datatables.net/v/dt/dt-1.11.2/datatables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/jquery.validate.min.js"></script>
+    <script>
+
+        $(document).ready(function() {
+            // Initialisasi DataTable ======================================================================================
+            var produkTable = $('#produkTable').DataTable({
+                ajax: {
+                    url: 'http://localhost/produk/produk1.php',
+                    dataSrc: ''
+                },
+                columns: [
+                    { data: 'id_produk' },
+                    { data: 'nama_produk' },
+                    { data: 'harga_produk' },
+                    { data: 'deskripsi' },
+                    {
+                        data: null,
+                        render: function (data, type, row) {
+                            return '<button class="deleteButton" data-id_produk="' + row.id_produk + '">Delete</button>' +
+                                   '<button class="updateButton" data-id_produk="' + row.id_produk + '">Update</button>';
+                        }
+                    }
+                ]
+            });
+
+            // Add/POST Form ===============================================================================================
+            $('#addForm').validate({
+                rules: {
+                    id_produk: 'required',
+                    nama_produk: 'required',
+                    harga_produk: 'required',
+                    deskripsi: 'required'
+                },
+                submitHandler: function(form) {
+                    var formData = $(form).serialize();
+                    $.ajax({
+                        url: 'http://localhost/produk/produk1.php',
+                        type: 'POST',
+                        data: formData,
+                        success: function(response) {
+                            produkTable.ajax.reload();
+                            form.reset();
+                        },
+                        error: function(xhr, status, error) {
+                            console.error(xhr.responseText);
+                        }
+                    });
+                }
+            });
+
+            // Intialisasi Update/PUT ======================================================================================
+            $('#updateForm').validate({
+                rules: {
+                    nama_produk_update: 'required',
+                    harga_produk_update: 'required',
+                    deskripsi_update: 'required',
+                },
+                submitHandler: function(form) {
+                    var formData = $(form).serialize();
+                    $.ajax({
+                        url: 'http://localhost/produk/produk1.php',
+                        type: 'PUT',
+                        data: formData,
+                        success: function(response) {
+                            produkTable.ajax.reload();
+                            $('#updateDialog').dialog('close');
+                        },
+                        error: function(xhr, status, error) {
+                            console.error(xhr.responseText);
+                        }
+                    });
+                }
+            });
+
+            // Update/PUT Form =============================================================================================
+            $('#produkTable').on('click', '.updateButton', function() {
+                var id_produk = $(this).data('id_produk');
+                var row = $(this).closest('tr');
+                var rowData = produkTable.row(row).data();
+                $('#id_produk_update').val(rowData.id_produk);
+                $('#new_id_produk').val('');
+                $('#nama_produk_update').val(rowData.nama_produk);
+                $('#harga_produk_update').val(rowData.harga_produk);
+                $('#deskripsi_update').val(rowData.deskripsi);
+                $('#updateDialog').dialog('open');
+            });
+
+            // Submit or Cancel ===========================================================================================
+            $('#updateDialog').dialog({
+                autoOpen: false,
+                width: 400,
+                buttons: {
+                    "Update": function() {
+                        $('#updateForm').submit();
+                    },
+                    "Cancel": function() {
+                        $(this).dialog('close');
+                    }
+                }
+            });
+
+            // DELETE + Confirmation =======================================================================================
+            $('#produkTable').on('click', '.deleteButton', function() {
+                var id_produk = $(this).data('id_produk');
+                var row = $(this).closest('tr');
+                if (confirm('Are you sure you want to delete this produk?')) {
+                    $.ajax({
+                        url: 'http://localhost/produk/produk1.php?id_produk=' + id_produk,
+                        type: 'DELETE',
+                        success: function(response) {
+                            produkTable.row(row).remove().draw(false);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error(xhr.responseText);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
